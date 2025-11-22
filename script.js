@@ -1,5 +1,7 @@
 // Handle the logic
 
+var WebTerm_HandleInput = null
+
 function WebTerm() {
 
     var imports = {
@@ -19,7 +21,8 @@ function WebTerm() {
     const argc = argv ? argv.length : 0;
 
     input.value = "\x1b\x18"; // ESCAPE CANCEL
-    function HandleInput(event) {
+    WebTerm_HandleInput = function(event) {
+        if (imports.KeyboardHandler) UpdateToggledKeys(e);
         if (imports.InputHandler == null) return;
         let str = input.value;
         if (str.length > 2) {
@@ -62,6 +65,16 @@ function WebTerm() {
     function MoveCursor1Arg(charnum) {
         cursor_state.pos = Math.max(0, Math.min(charnum, screen.childElementCount - 1));
         newline = false;
+    }
+
+    var screen_columns;
+    var screen_rows;
+
+    function GetScreenDimensions() {
+        return {
+            rows: screen_rows,
+            columns: screen_columns
+        }
     }
 
     var focused = false;
@@ -468,8 +481,6 @@ function WebTerm() {
         //screen.innerHTML = scrtxt;
     }
 
-    imports = Main(SendOutput);
-
     function getStyle(el, styleProp) {
     var value, defaultView = (el.ownerDocument || document).defaultView;
     // W3C standard way:
@@ -660,12 +671,8 @@ function WebTerm() {
 
     var symbol_row_overlap;
     var symbol_height;
-    var screen_rows;
-    var old_screen_height = 0;
-    var old_screen_width = 0;
     var symbol_column_overlap;
     var symbol_width;
-    var screen_columns;
     var exess_width;
     var exess_height;
     var mouse_row = 0;
@@ -783,6 +790,10 @@ function WebTerm() {
     }
 
     function OnMouseWheel(e) {
+        if (e.button != undefined) { // not touch
+            if (imports.KeyboardHandler) UpdateToggledKeys(e);
+            e.preventDefault();
+        }
         if (imports.InputHandler == null) return;
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -1001,7 +1012,7 @@ function WebTerm() {
     window.addEventListener("focus", GotFocus);
     window.addEventListener("blur", LostFocus);
 
-    //setInterval(ResizeScreen, 1000);
+    imports = Main(SendOutput,GetScreenDimensions);
 }
 
 document.addEventListener("DOMContentLoaded",WebTerm);

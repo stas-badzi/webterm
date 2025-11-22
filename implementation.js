@@ -25,10 +25,12 @@ function OnUnload() {
 }
 
 var SendOutput = null;
+var GetScreenDimensions = null;
 
 // This will be called by script.js, when the terminal is initialized
-function Main(SendOutputFunction) {
+function Main(SendOutputFunction,GetScreenDimensionsFunction) {
     SendOutput=SendOutputFunction;
+    GetScreenDimensions=GetScreenDimensionsFunction;
 
     // initialize
     const params = new URLSearchParams(window.location.search);
@@ -48,11 +50,13 @@ function Main(SendOutputFunction) {
 }
 
 var gamelaunched = false;
+var oldscreendims = null;
 
 xml.onreadystatechange = function() {
     if (xml.readyState == 4 && xml.status == 200) {
         if (gameid == -1) {
             gameid = parseInt(xml.responseText);
+            if (gameid == -1) console.error("Game launch failed");
             setTimeout(function() {xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/update-game/${gameid}.cgi`); xml.send();}, 1000);
         } else {
             if (!gamelaunched) {
@@ -60,9 +64,9 @@ xml.onreadystatechange = function() {
                 gamelaunched = die && die[0] == '1';
             }
             SendOutput(decodeURIComponent(xml.responseText));
-            if (screen_rows != old_screen_height || screen_columns != old_screen_width || !gamelaunched) {
-                set_cookie(`screen${gameid}`, String.fromCharCode(screen_columns, screen_rows),"/");
-                old_screen_height = screen_rows; old_screen_width = screen_columns;
+            if (oldscreendims != GetScreenDimensions() || !gamelaunched) {
+                oldscreendims = GetScreenDimensions();
+                set_cookie(`screen${gameid}`, String.fromCharCode(oldscreendims.columns, oldscreendims.rows),"/");
             }
             set_cookie(`stdin${gameid}`, string,"/");
             string = "";
