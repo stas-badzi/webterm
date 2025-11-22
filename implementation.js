@@ -35,7 +35,7 @@ function Main(SendOutputFunction) {
     const argv_param = params.get("argv");
     const argv = (argv_param && argv_param.length > 0 && argv_param != 'undefined') ? JSON.parse(argv_param) : null;
     const argc = argv ? argv.length : 0;
-    set_cookie("args", stringifyJSONarray(argv));
+    set_cookie("args", stringifyJSONarray(argv),"/");
     xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/new-game.cgi`);
     xml.send();
 
@@ -61,12 +61,12 @@ xml.onreadystatechange = function() {
             }
             SendOutput(decodeURIComponent(xml.responseText));
             if (screen_rows != old_screen_height || screen_columns != old_screen_width || !gamelaunched) {
-                set_cookie(`screen${gameid}`, String.fromCharCode(screen_columns, screen_rows));
+                set_cookie(`screen${gameid}`, String.fromCharCode(screen_columns, screen_rows),"/");
                 old_screen_height = screen_rows; old_screen_width = screen_columns;
             }
-            set_cookie(`stdin${gameid}`, string);
+            set_cookie(`stdin${gameid}`, string,"/");
             string = "";
-            set_cookie(`keyboard${gameid}`, keys);
+            set_cookie(`keyboard${gameid}`, keys, "/");
             keys = "";
             xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/update-game/${gameid}.cgi`);
             xml.send();
