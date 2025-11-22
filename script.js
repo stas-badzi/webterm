@@ -21,7 +21,7 @@ function WebTerm() {
     const argc = argv ? argv.length : 0;
 
     input.value = "\x1b\x18"; // ESCAPE CANCEL
-    WebTerm_HandleInput = function(event) {
+    WebTerm_HandleInput = function(e) {
         if (imports.KeyboardHandler) UpdateToggledKeys(e);
         if (imports.InputHandler == null) return;
         let str = input.value;
