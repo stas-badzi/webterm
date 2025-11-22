@@ -2,14 +2,6 @@
 // I am aware that using `GET` requests isn't the proper way to send large amounts of data, but this host only supports this type communication with cgi files
 // I am also aware that I should use `https://example.com?data=data`, due to some bug at the time of creation that data had no been passed to the cgi files, that's why I use cookies to communicate
 
-// Recomended to import to handle Keyboard events
-import "key.js"
-
-// imports specific to this implementation
-import "cookie.js";
-import "myjson.js"
-
-var SendOutput = null;
 
 var xml = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 var gameid = -1;
@@ -22,24 +14,29 @@ function HandleInput(appendinput) {
 }
 
 function HandleKeys(event) {
-    keys += String.fromCharCode(event.type, event.value); // append to keys (to send later) encoded in base-256
+    keys += pair_to_utf8(event.type, event.value); // append to keys (to send later) encoded in base-256
 }
 
 function OnUnload() {
+    if (gameid == -1) return;
     let _xml = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-    _xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/kill-game/${gameid}.cgi`);
+    _xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/kill-game/${gameid}.cgi`,false);
     _xml.send();
 }
 
-export default function (SendOutputFunction) {
+var SendOutput = null;
+
+// This will be called by script.js, when the terminal is initialized
+function Main(SendOutputFunction) {
     SendOutput=SendOutputFunction;
 
     // initialize
+    const params = new URLSearchParams(window.location.search);
     const argv_param = params.get("argv");
     const argv = (argv_param && argv_param.length > 0 && argv_param != 'undefined') ? JSON.parse(argv_param) : null;
     const argc = argv ? argv.length : 0;
     set_cookie("args", stringifyJSONarray(argv));
-    xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/new-game.cgi`,false);
+    xml.open("GET", `https://stasbadzi.w.staszic.waw.pl/cgi-bin/new-game.cgi`);
     xml.send();
 
     // return functions (or null[s] to ignore) to be called when [0]standard input or [1]key states change,

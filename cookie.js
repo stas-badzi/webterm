@@ -1,7 +1,7 @@
 function set_cookie(name, value, path, domain) {
     if (!path) path = window.location.pathname;
     if (!domain) domain = window.location.host;
-    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; SameSite=Lax; Secure; domain=${domain}; path=${path}`
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; SameSite=Strict; Secure; domain=${domain}; path=${path}`
 }
 
 function get_cookie(name) {

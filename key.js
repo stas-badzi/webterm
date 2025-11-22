@@ -342,8 +342,6 @@ const K_PPLUSMINUS = (((KT_PAD)<<8)|17); /* key-pad plus/minus */
 const K_PPARENL = (((KT_PAD)<<8)|18); /* key-pad left parenthesis */
 const K_PPARENR = (((KT_PAD)<<8)|19); /* key-pad right parenthesis */
 
-const NR_PAD = 20;
-
 const K_DGRAVE = (((KT_DEAD)<<8)|0);
 const K_DACUTE = (((KT_DEAD)<<8)|1);
 const K_DCIRCM = (((KT_DEAD)<<8)|2);
@@ -371,8 +369,6 @@ const K_DINVBREVE = (((KT_DEAD)<<8)|23);
 const K_DBECOMMA = (((KT_DEAD)<<8)|24);
 const K_DCURRENCY = (((KT_DEAD)<<8)|25);
 const K_DGREEK = (((KT_DEAD)<<8)|26);
-
-const NR_DEAD = 27;
 
 const K_DOWN = (((KT_CUR)<<8)|0);
 const K_LEFT = (((KT_CUR)<<8)|1);
@@ -416,8 +412,6 @@ const K_HEXd = (((KT_ASCII)<<8)|23);
 const K_HEXe = (((KT_ASCII)<<8)|24);
 const K_HEXf = (((KT_ASCII)<<8)|25);
 
-const NR_ASCII = 26;
-
 const K_SHIFTLOCK = (((KT_LOCK)<<8)|KG_SHIFT);
 const K_CTRLLOCK = (((KT_LOCK)<<8)|KG_CTRL);
 const K_ALTLOCK = (((KT_LOCK)<<8)|KG_ALT);
@@ -437,8 +431,6 @@ const K_SHIFTR_SLOCK = (((KT_SLOCK)<<8)|KG_SHIFTR);
 const K_CTRLL_SLOCK = (((KT_SLOCK)<<8)|KG_CTRLL);
 const K_CTRLR_SLOCK = (((KT_SLOCK)<<8)|KG_CTRLR);
 const K_CAPSSHIFT_SLOCK = (((KT_SLOCK)<<8)|KG_CAPSSHIFT);
-
-const NR_LOCK = 9;
 
 const K_BRL_BLANK= (((KT_BRL)<<8)| 0);
 const K_BRL_DOT1 = (((KT_BRL)<<8)| 1);
