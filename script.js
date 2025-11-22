@@ -22,7 +22,6 @@ function WebTerm() {
 
     input.value = "\x1b\x18"; // ESCAPE CANCEL
     WebTerm_HandleInput = function(e) {
-        if (imports.KeyboardHandler) UpdateToggledKeys(e);
         if (imports.InputHandler == null) return;
         let str = input.value;
         if (str.length > 2) {
