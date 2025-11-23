@@ -14,7 +14,7 @@ function WebTerm() {
     const fakescreen_h = document.getElementById("fake-screen-h");
     const fakescreen_w = document.getElementById("fake-screen-w");
     const input = document.getElementById("pageinput");
-    const buffer = "";
+    var buffer = "";
 
     var termios = new Termios();
 
