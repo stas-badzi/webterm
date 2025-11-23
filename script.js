@@ -15,11 +15,6 @@ function WebTerm() {
     const fakescreen_w = document.getElementById("fake-screen-w");
     const input = document.getElementById("pageinput");
 
-    const params = new URLSearchParams(window.location.search);
-    const argv_param = params.get("argv");
-    const argv = (argv_param && argv_param.length > 0 && argv_param != 'undefined') ? JSON.parse(argv_param) : null;
-    const argc = argv ? argv.length : 0;
-
     input.value = "\x1b\x18"; // ESCAPE CANCEL
     WebTerm_HandleInput = function(e) {
         if (imports.InputHandler == null) return;
@@ -142,7 +137,7 @@ function WebTerm() {
 
     var resize = true;
     function SendOutput(scr) {
-        if (scr.length) console.log(scr);
+        //if (scr.length) console.log(scr);
         if (resize) {
             let max_childs = screen_columns * screen_rows;
             let scrmax = screen.childElementCount;
