@@ -288,10 +288,10 @@ const Key = {
     END: 279, /* Select [End] */
     PGUP: 280, /* Prior [PageUp] */
     PGDN: 281, /* Next [PageDown] */
-    MACRO: K_MACRO, /* Macro */
+    MACRO: 282, /* Macro */
     HELP: 283, /* Help */
     DO: 284, /* Do */
-    PAUSE: K_PAUSE, /* Pause */
+    PAUSE: 285, /* Pause */
     F21: 286, /* F21 */
     F22: 287, /* F22 */
     F23: 288, /* F23 */
@@ -600,8 +600,8 @@ const Key = {
     ALTGR: 1793, /* Alt */
     SHIFTL: 1796, /* ShiftLeft */
     SHIFTR: 1797, /* ShiftRight */
-    CTRLL: K_CTRLL, /* CtrlLeft */
-    CTRLR: K_CTRLR, /* CtrlRight */
+    CTRLL: 1798, /* CtrlLeft */
+    CTRLR: 1799, /* CtrlRight */
     CAPSSHIFT: 1800, /* CapsShift */
 
     ASC0: 2304, /* Ascii_0 */
