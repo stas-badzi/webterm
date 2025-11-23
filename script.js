@@ -27,7 +27,7 @@ function WebTerm() {
             nextbuf=buffer.substring(nl+1);
             buffer=buffer.substring(0,nl+1);
         }
-        GotInput(buffer);
+        imports.InputHandler(buffer);
         buffer=nextbuf;
     }
 
