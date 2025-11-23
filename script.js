@@ -181,7 +181,7 @@ function WebTerm() {
                         MoveCursor(oldpos.y, oldpos.x);
                         continue;
                     } else if (scr[j] === '#') {
-                        // Close term signal sent from implementation => don't call ExitHandler  
+                        // Close term (signal sent from implementation => don't call ExitHandler)
                         imports.ExitHandler = null;
                         window.close();
                         window.history.back();
@@ -992,11 +992,10 @@ function WebTerm() {
     isOpera = navigator.userAgent.indexOf("OPR") > -1 || navigator.userAgent.indexOf("Opera") > -1;
 
     function PopupWindow(argv) {
-        let url = window.location.protocol + "//" + window.location.host + window.location.pathname
+        let url = window.location.protocol + "//" + window.location.host + window.location.pathname;
         let query = new URLSearchParams();
-        let argv_str = JSON.stringify(argv);
         query.append("argc",argv.length);
-        query.append("argv",argv_str);
+        query.append("argv",JSON.stringify(argv));
         if (isOpera) document.open(url+"?"+query.toString(),`popup${gameid}-${++popup_counter}`,'width=auto,height=auto');
         else document.open(url+"?"+query.toString(),`popup${gameid}-${++popup_counter}`,'width=700,height=450');
     }
