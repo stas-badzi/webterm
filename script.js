@@ -14,6 +14,22 @@ function WebTerm() {
     const fakescreen_h = document.getElementById("fake-screen-h");
     const fakescreen_w = document.getElementById("fake-screen-w");
     const input = document.getElementById("pageinput");
+    const buffer = "";
+
+    var termios = new Termios();
+
+    function GotInput(str) {
+        if (termios.LocalFlags & ECHO) SendOutput(str);
+        buffer = buffer+str;
+        let nextbuf = ""
+        if (termios.LocalFlags & ICANON) {
+            let nl = buffer.lastIndexOf('\n');
+            nextbuf=buffer.substring(nl+1);
+            buffer=buffer.substring(0,nl+1);
+        }
+        GotInput(buffer);
+        buffer=nextbuf;
+    }
 
     input.value = "\x1b\x18"; // ESCAPE CANCEL
     WebTerm_HandleInput = function(e) {
@@ -22,21 +38,21 @@ function WebTerm() {
         if (str.length > 2) {
             for (let i = 0; i < str.length; i++) {
                 if (str[i] === "\x1b" || str[i] === "\x18") continue;
-                imports.InputHandler(str[i]);
+                GotInput(str[i]);
                 //console.log(str[i]);
             }
             input.value = "\x1b\x18"; // ESC CAN
         } else if (str.length === 1) {
             //log.textContent = text.substring(0, text.length - 1);
             if (str === "\x1b") {
-                imports.InputHandler('\x7f'); // DEL
+                GotInput('\x7f'); // DEL
                 //console.log("\x7f");
             }
             else if (str === "\x18") {
-                imports.InputHandler('\b'); // BACKSPACE
+                GotInput('\b'); // BACKSPACE
                 //console.log("\b");
             } else {
-                string =+ str;
+                GotInput(str);
                 //console.log(str);
             }
             input.value = "\x1b\x18"; // ESC CAN
@@ -46,6 +62,52 @@ function WebTerm() {
             //console.log(str);
         }
     }
+
+    var last_cursor = {x: 0, y: 0};
+    var newline = false;
+    
+    class Screen {
+        constructor() {
+            this.screenHTML='<span class="style space">#</span>';
+            this.cursorpos = last_cursor;
+            this.nl = false;
+        }
+        update() {
+            this.screenHTML=screen.innerHTML;
+            this.cursorpos = last_cursor;
+            this.nl = newline;
+        }
+        restore() {
+            screen.innerHTML=this.screenHTML;
+            last_cursor.x = this.cursorpos.x;
+            last_cursor.y = this.cursorpos.y;
+            newline = this.nl;
+            resize=true;
+            SendOutput();
+            blinkstate = 51;
+            BlinkStep();
+        }
+    }
+
+    var MouseTracking=false;
+    var ExtendedMouseTracking=false;
+    var URXVTMouseTracking=false;
+    var FocusChangeReporting=false;
+    var AlternateBuffer=false;
+
+    var otherscreen = new Screen();
+
+    function SetScreenBuffer(IsNewAlternate) {
+        if (IsNewAlternate==AlternateBuffer) return;
+        if (IsNewAlternate) {
+            otherscreen.update()
+            new Screen().restore();
+        } else otherscreen.restore();
+        AlternateBuffer=IsNewAlternate;
+    }
+
+    function GetTermios() {return termios;}
+    function SetTermios(newtermios) {termios=newtermios;GotInput("")}
 
     function HandleCursor(elem) {
         elem.selectionStart = elem.selectionEnd = 1;
@@ -59,6 +121,8 @@ function WebTerm() {
     function MoveCursor1Arg(charnum) {
         cursor_state.pos = Math.max(0, Math.min(charnum, screen.childElementCount - 1));
         newline = false;
+        blinkstate = 51;
+        BlinkStep();
     }
 
     var screen_columns;
@@ -72,15 +136,14 @@ function WebTerm() {
     }
 
     var focused = false;
-    var oldblinkstate = false;
-    var last_cursor = {x: 0, y: 0};
-    var newline = false;
     function MoveCursor(row, column) {
-        if (column === undefined) MoveCursor1Arg(row);
+        if (column === undefined) {MoveCursor1Arg(row);return;}
         last_cursor.x = Math.max(0, Math.min(column, screen_columns - 1));
         last_cursor.y = Math.max(0, Math.min(row, screen_rows - 1));
         cursor_state.pos = last_cursor.y * screen_columns + last_cursor.x;
         newline = false;
+        blinkstate = 51;
+        BlinkStep();
     }
 
     const style_span_map = {
@@ -323,6 +386,32 @@ function WebTerm() {
                                 }
                             }
                     
+                    } else if (Math.abs(full_action.turnon) === 1) {
+                        for (let a = 0; a < full_action.actions.length; a++)
+                            if (full_action.actions[a].group === 1) {
+                                switch (full_action.actions[a].type) {
+                                    case 25: // Show/hide cursor
+                                        cursor_state.hidden = full_action.turnon<0;
+                                        blinkstate=51;
+                                        BlinkStep();
+                                        break;
+                                    case 1049:
+                                        SetScreenBuffer(full_action.turnon>0)
+                                        break;
+                                    case 1003:
+                                        MouseTracking=full_action.turnon>0;
+                                        break;
+                                    case 1016:
+                                        ExtendedMouseTracking=full_action.turnon>0;
+                                    case 1015:
+                                        URXVTMouseTracking=full_action.turnon>0;
+                                        break;
+                                    case 1004:
+                                        FocusChangeReporting=full_action.turnon>0;
+                                        if (focused) GotInput("\x1b[I");
+                                        break;
+                                }
+                            }
                     } else if (full_action.turnon === 2) // ESC[{row};{column}H
                         MoveCursor(full_action.actions[0].type - 1, full_action.actions[1].type - 1);
                     else if (full_action.turnon === 3) // ESC[#A
@@ -346,7 +435,7 @@ function WebTerm() {
                     } else if (full_action.turnon === 9) // ESC[#G
                         MoveCursor(last_cursor.y, full_action.actions[0].type - 1);
                     else if (full_action.turnon === 10) { // ESC[#n
-                        if (full_action.actions[0].type === 6) {if (imports.InputHandler) imports.InputHandler("\x1b[" + (last_cursor.y + 1) + ';' + (last_cursor.x+1) + 'R');}
+                        if (full_action.actions[0].type === 6) {if (imports.InputHandler) GotInput("\x1b[" + (last_cursor.y + 1) + ';' + (last_cursor.x+1) + 'R');}
                     } else if (full_action.turnon === 11) { // ESC[#J
                         let str = "";
                         let oldpos = last_cursor;
@@ -395,16 +484,7 @@ function WebTerm() {
                             default:
                                 break;
                         }
-                    } else for (let a = 0; a < full_action.actions.length; a++)
-                        if (full_action.actions[a].group === 1) {
-                            switch (full_action.actions[a].type) {
-                                case 25: // Show/hide cursor
-                                    cursor_state.hidden = full_action.turnon === -1;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
+                    }
                     i = j;
                 } else if (scr[i + 1] === '@'){
                     let ch = scr[i + 2];
@@ -437,6 +517,24 @@ function WebTerm() {
                 newline = true;
             } else if (c === '\r') {
                 MoveCursor(last_cursor.y, 0);
+            } else if (c === '\b') {
+                if (buffer.length) {
+                    buffer=buffer.substring(0,buffer.length-1);
+                    if (termios.LocalFlags & ECHO) {
+                        if (cursor_state.pos) {
+                            if (last_cursor.x === 0) {
+                                --last_cursor.y;
+                                last_cursor.x = screen_columns;
+                            }
+                            --last_cursor.x
+                            --cursor_state.pos;
+                        }
+                        if (screen.children[cursor_state.pos].classList != "style" + style_span_map.space)
+                            screen.children[cursor_state.pos].classList = "style" + style_span_map.space;
+                    }
+                    blinkstate = 51;
+                    BlinkStep();
+                }
             } else {
                 if (cursor_state.pos < scrmax) {
                     if (c === '\t') { // space without color
@@ -457,6 +555,8 @@ function WebTerm() {
                     last_cursor.x = 0;
                     ++last_cursor.y;
                 } ++cursor_state.pos;
+                blinkstate = 51;
+                BlinkStep();
             }
         }
         if (cursor_state.pos >= scrmax) {
@@ -508,7 +608,6 @@ function WebTerm() {
     var oldcursor = { type: cursor_state.type, blink: cursor_state.blink, pos: -1 };
     var lastfocused = true;
     function BlinkStep() {
-        let oldblinkstate = (blinkstate > 0);
         if (blinkstate > 0) {
             if (--blinkstate === 0)
                 blinkstate = -50;
@@ -647,7 +746,7 @@ function WebTerm() {
                         screen.children[cursor_state.pos].style.width = (parseFloat(symbol.width.substr(0,symbol.width.length-2)) - (parseFloat(border.left.substr(0,border.left.length-2)) + parseFloat(border.right.substr(0,border.right.length-2)))) + "px";
                         screen.children[cursor_state.pos].style.height = (parseFloat(symbol.height.substr(0,symbol.height.length-2)) - (parseFloat(border.top.substr(0,border.top.length-2)) + parseFloat(border.bottom.substr(0,border.bottom.length-2)))) + "px";
                     }
-                }
+                } // TODO - ther cursor shapes else
             }
         }
         oldcursor.type = cursor_state.type;
@@ -680,7 +779,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler === null) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -718,7 +817,7 @@ function WebTerm() {
         if (e.altKey || e.metaKey) operation |= (1<<3); // control
         if (e.ctrlKey) operation |= (1<<4); // alt
 
-        imports.InputHandler("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
     }
 
     function OnTapStart(e) {
@@ -744,7 +843,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -780,7 +879,7 @@ function WebTerm() {
         if (e.altKey || e.metaKey) operation |= (1<<3); // control
         if (e.ctrlKey) operation |= (1<<4); // alt
 
-        imports.InputHandler("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm');
+        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm');
     }
 
     function OnMouseWheel(e) {
@@ -788,7 +887,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
 
@@ -798,10 +897,10 @@ function WebTerm() {
         if (e.webkitDirectionInvertedFromDevice) deltaX = -deltaX; // macOS safari `natural scrolling`
 
         if (deltaY != 0)
-            imports.InputHandler("\x1b[<" + ((1<<6) | ((deltaY < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + "M");
+            GotInput("\x1b[<" + ((1<<6) | ((deltaY < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + "M");
         if (deltaX != 0) {
-            imports.InputHandler("\x1b[<" + ((1<<6) | (1<<1) | ((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
-            string +="\x1b[<" + ((1<<6) | (1<<1) |((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm';
+            GotInput("\x1b[<" + ((1<<6) | (1<<1) | ((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+            GotInput("\x1b[<" + ((1<<6) | (1<<1) |((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm')
         }
     }
 
@@ -810,7 +909,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -851,7 +950,7 @@ function WebTerm() {
         }
         
         lastmouse.x = mouse_column; lastmouse.y = mouse_row;
-        imports.InputHandler("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
 
         //MoveCursor(mouse_row, mouse_column);
     }
@@ -978,13 +1077,13 @@ function WebTerm() {
         focused = true;
         blinkstate = 51;
         BlinkStep();
-        //console.log("[I");
+        if (FocusChangeReporting) GotInput("\x1b[I");
     }
 
     function LostFocus() {
         focused = false;
         BlinkStep();
-        //console.log("[O");
+        if (FocusChangeReporting) GotInput("\x1b[O");
     }
 
     var popup_counter = 0;
@@ -1005,7 +1104,7 @@ function WebTerm() {
     window.addEventListener("focus", GotFocus);
     window.addEventListener("blur", LostFocus);
 
-    imports = Main(SendOutput,GetScreenDimensions);
+    imports = Main(SendOutput,GetScreenDimensions,GetTermios,SetTermios);
 }
 
 document.addEventListener("DOMContentLoaded",WebTerm);
