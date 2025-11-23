@@ -20,7 +20,7 @@ function WebTerm() {
 
     function GotInput(str) {
         if (termios.LocalFlags & ECHO) SendOutput(str);
-        buffer = buffer+str;
+        buffer = buffer.concat(str);
         let nextbuf = ""
         if (termios.LocalFlags & ICANON) {
             let nl = buffer.lastIndexOf('\n');
