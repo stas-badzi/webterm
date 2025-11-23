@@ -83,7 +83,7 @@ function WebTerm() {
             last_cursor.y = this.cursorpos.y;
             newline = this.nl;
             resize=true;
-            SendOutput();
+            SendOutput("");
             blinkstate = 51;
             BlinkStep();
         }
