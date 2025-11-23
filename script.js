@@ -107,7 +107,7 @@ function WebTerm() {
     }
 
     function GetTermios() {return termios;}
-    function SetTermios(newtermios) {termios=newtermios;GotInput("")}
+    function SetTermios(newtermios) {termios=newtermios;if (imports.InputHandler) GotInput("")}
 
     function HandleCursor(elem) {
         elem.selectionStart = elem.selectionEnd = 1;
