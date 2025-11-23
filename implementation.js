@@ -1,5 +1,11 @@
 // This is an example of how you could connect the terminal with a server
 
+const params = new URLSearchParams(window.location.search);
+const argv_param = params.get("argv");
+const argc_param = params.get("argc");
+const argc = argc_param ? ParseInt(argc_param) : 0;
+const argv = (argv_param && argv_param.length > 0 && argv_param != 'undefined') ? JSON.parse(argv_param) : [];
+
 var SendOutput = null;
 var GetScreenDimensions = null;
 
