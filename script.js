@@ -186,7 +186,7 @@ function WebTerm() {
                         MoveCursor(oldpos.y, oldpos.x);
                         continue;
                     } else if (scr[j] === '#') {
-                        // Close term signal sent from implementation => don't call ExitHandler  
+                        // Close term (signal sent from implementation => don't call ExitHandler)
                         imports.ExitHandler = null;
                         window.close();
                         window.history.back();
