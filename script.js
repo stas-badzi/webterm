@@ -217,8 +217,8 @@ function WebTerm() {
                 screen.appendChild(space_span);
             }
 
-            MoveCursor(last_cursor.y, last_cursor.x);
             resize = false;
+            MoveCursor(last_cursor.y, last_cursor.x);
         }
 
         let scrmax = screen.childElementCount;
