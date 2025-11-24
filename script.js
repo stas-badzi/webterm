@@ -522,10 +522,14 @@ function WebTerm() {
                         document.title = titlestr;
                 }
             } else if (c === '\n') {
-                if (!(last_cursor.x == 0 && !newline)) MoveCursor(last_cursor.y + 1, 0),newcursor=true;
+                if (!(last_cursor.x == 0 && !newline)) MoveCursor(last_cursor.y + 1, 0);
                 newline = true;
+                blinkstate = 50;
+                newcursor=true;
             } else if (c === '\r') {
-                MoveCursor(last_cursor.y, 0),newcursor=true;
+                MoveCursor(last_cursor.y, 0);
+                    blinkstate = 50;
+                    newcursor=true;
             } else if (c === '\b') {
                 if (buffer.length) {
                     buffer=buffer.substring(0,buffer.length-1);
@@ -541,9 +545,12 @@ function WebTerm() {
                         if (screen.children[cursor_state.pos].classList != "style" + style_span_map.space)
                             screen.children[cursor_state.pos].classList = "style" + style_span_map.space;
                     }
-                    blinkstate = 50;
-                    newcursor=true;
                 }
+                blinkstate = 50;
+                newcursor=true;
+            } else if (c === '\x7f') { // Dont print `DEL`
+                blinkstate = 50;
+                newcursor=true;
             } else {
                 if (cursor_state.pos < scrmax) {
                     if (c === '\t') { // space without color
