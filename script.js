@@ -83,9 +83,9 @@ function WebTerm() {
             last_cursor.y = this.cursorpos.y;
             newline = this.nl;
             resize=true;
-            SendOutput("");
-            blinkstate = 51;
-            BlinkStep();
+            SendOutput("",true);
+            blinkstate = 50;
+            UpdateCursor();
         }
     }
 
@@ -121,8 +121,7 @@ function WebTerm() {
     function MoveCursor1Arg(charnum) {
         cursor_state.pos = Math.max(0, Math.min(charnum, screen.childElementCount - 1));
         newline = false;
-        blinkstate = 51;
-        BlinkStep();
+        blinkstate = 50;
     }
 
     var screen_columns;
@@ -142,8 +141,7 @@ function WebTerm() {
         last_cursor.y = Math.max(0, Math.min(row, screen_rows - 1));
         cursor_state.pos = last_cursor.y * screen_columns + last_cursor.x;
         newline = false;
-        blinkstate = 51;
-        BlinkStep();
+        blinkstate = 50;
     }
 
     const style_span_map = {
@@ -199,8 +197,8 @@ function WebTerm() {
     };
 
     var resize = true;
-    function SendOutput(scr) {
-        //if (scr.length) console.log(scr);
+    function SendOutput(scr,keepcursor) {
+        let newcursor = false;
         if (resize) {
             let max_childs = screen_columns * screen_rows;
             let scrmax = screen.childElementCount;
@@ -219,6 +217,7 @@ function WebTerm() {
 
             resize = false;
             MoveCursor(last_cursor.y, last_cursor.x);
+            newcursor = true;
         }
 
         let scrmax = screen.childElementCount;
@@ -233,15 +232,18 @@ function WebTerm() {
                     if (scr[j] === 'H') {
                         MoveCursor(0,0); i=j;
                         newline = true;
+                        newcursor=true;
                         continue;
                     } else if (scr[j] === 'J') {
                         let str; for (let i = cursor_state.pos; i < screen.childElementCount; i++) str += "\t";
-                        SendOutput(str);
+                        SendOutput(str,true);
+                        newcursor=true;
                         continue;
                     } else if (scr[j] === 'K') {
                         let str; for (let i = last_cursor.x; i < screen_columns; i++) str += "\t";
-                        SendOutput(str);
+                        SendOutput(str,true);
                         MoveCursor(oldpos.y, oldpos.x);
+                        newcursor=true;
                         continue;
                     } else if (scr[j] === '#') {
                         // Close term (signal sent from implementation => don't call ExitHandler)
@@ -392,8 +394,8 @@ function WebTerm() {
                                 switch (full_action.actions[a].type) {
                                     case 25: // Show/hide cursor
                                         cursor_state.hidden = full_action.turnon<0;
-                                        blinkstate=51;
-                                        BlinkStep();
+                                        blinkstate=50;
+                                        newcursor=true;
                                         break;
                                     case 1049:
                                         SetScreenBuffer(full_action.turnon>0)
@@ -413,27 +415,28 @@ function WebTerm() {
                                 }
                             }
                     } else if (full_action.turnon === 2) // ESC[{row};{column}H
-                        MoveCursor(full_action.actions[0].type - 1, full_action.actions[1].type - 1);
+                        MoveCursor(full_action.actions[0].type - 1, full_action.actions[1].type - 1),newcursor=true;
                     else if (full_action.turnon === 3) // ESC[#A
-                        MoveCursor(last_cursor.y-full_action.actions[0].type, last_cursor.x);
+                        MoveCursor(last_cursor.y-full_action.actions[0].type, last_cursor.x),newcursor=true;
                     else if (full_action.turnon === 4) // ESC[#B
-                        MoveCursor(last_cursor.y+full_action.actions[0].type, last_cursor.x);
+                        MoveCursor(last_cursor.y+full_action.actions[0].type, last_cursor.x),newcursor=true;
                     else if (full_action.turnon === 5) // ESC[#C
-                        MoveCursor(last_cursor.y, last_cursor.x+full_action.actions[0].type);
+                        MoveCursor(last_cursor.y, last_cursor.x+full_action.actions[0].type),newcursor=true;
                     else if (full_action.turnon === 6) // ESC[#D
-                        MoveCursor(last_cursor.y, last_cursor.x-full_action.actions[0].type);
+                        MoveCursor(last_cursor.y, last_cursor.x-full_action.actions[0].type),newcursor=true;
                     else if (full_action.turnon === 7) { // ESC[#E
                         if (last_cursor.x == 0 && !newline) newline = true;
-                        else MoveCursor(last_cursor.y + 1, 0);
-                        if (full_action.actions[0].type > 0) MoveCursor(last_cursor.y+full_action.actions[0].type-1,0);
+                        else MoveCursor(last_cursor.y + 1, 0),newcursor=true;
+                        if (full_action.actions[0].type > 0) MoveCursor(last_cursor.y+full_action.actions[0].type-1,0),newcursor=true;
                     } else if (full_action.turnon === 8) { // ESC[#F
                         if (last_cursor.x == 0 && !newline) {
                             MoveCursor(last_cursor.y-Math.max(2,full_action.actions[0].type+1), 0);
+                            newcursor=true;
                             newline = true;
                         }
-                        else MoveCursor(last_cursor.y-Math.max(1,full_action.actions[0].type), 0);
+                        else MoveCursor(last_cursor.y-Math.max(1,full_action.actions[0].type), 0),newcursor=true;
                     } else if (full_action.turnon === 9) // ESC[#G
-                        MoveCursor(last_cursor.y, full_action.actions[0].type - 1);
+                        MoveCursor(last_cursor.y, full_action.actions[0].type - 1),newcursor=true;
                     else if (full_action.turnon === 10) { // ESC[#n
                         if (full_action.actions[0].type === 6) GotInput("\x1b[" + (last_cursor.y + 1) + ';' + (last_cursor.x+1) + 'R');
                     } else if (full_action.turnon === 11) { // ESC[#J
@@ -442,19 +445,22 @@ function WebTerm() {
                         switch (full_action.actions[0].type) {
                             case 0: // Erase from cursor to end of display
                                 for (let i = cursor_state.pos; i < screen.childElementCount; i++) str += "\t";
-                                SendOutput(str);
+                                SendOutput(str,true);
                                 MoveCursor(oldpos.y, oldpos.x);
+                                newcursor=true;
                                 break;
                             case 1: // Erase from start to cursor
                                 for (let i = 0; i <= cursor_state.pos; i++) str += "\t";
                                 MoveCursor(0, 0);
-                                SendOutput(str);
+                                SendOutput(str,true);
+                                newcursor=true;
                                 break;
                             case 2: // Erase all of display
                                 for (let i = 0; i < screen.childElementCount; i++) str += "\t";
                                 MoveCursor(0, 0);
-                                SendOutput(str);
+                                SendOutput(str,true);
                                 MoveCursor(oldpos.y, oldpos.x);
+                                newcursor=true;
                                 break;
                             case 3: // Erase saved lines (idk what this is -> I won't use it = I don't care)
                                 break;
@@ -467,19 +473,22 @@ function WebTerm() {
                         switch (full_action.actions[0].type) {
                             case 0: // Erase from cursor to end of line
                                 for (let i = last_cursor.x; i < screen_columns; i++) str += "\t";
-                                SendOutput(str);
+                                SendOutput(str,true);
                                 MoveCursor(oldpos.y, oldpos.x);
+                                newcursor=true;
                                 break;
                             case 1: // Erase from start to cursor
                                 for (let i = 0; i <= last_cursor.x; i++) str += "\t";
                                 MoveCursor(last_cursor.y, 0);
-                                SendOutput(str);
+                                SendOutput(str,true);
+                                newcursor=true;
                                 break;
                             case 2: // Erase whole line
                                 for (let i = 0; i < screen_columns; i++) str += "\t";
                                 MoveCursor(last_cursor.y, 0);
-                                SendOutput(str);
+                                SendOutput(str,true);
                                 MoveCursor(oldpos.y, oldpos.x);
+                                newcursor=true;
                                 break;
                             default:
                                 break;
@@ -513,10 +522,10 @@ function WebTerm() {
                         document.title = titlestr;
                 }
             } else if (c === '\n') {
-                if (!(last_cursor.x == 0 && !newline)) MoveCursor(last_cursor.y + 1, 0);
+                if (!(last_cursor.x == 0 && !newline)) MoveCursor(last_cursor.y + 1, 0),newcursor=true;
                 newline = true;
             } else if (c === '\r') {
-                MoveCursor(last_cursor.y, 0);
+                MoveCursor(last_cursor.y, 0),newcursor=true;
             } else if (c === '\b') {
                 if (buffer.length) {
                     buffer=buffer.substring(0,buffer.length-1);
@@ -532,8 +541,8 @@ function WebTerm() {
                         if (screen.children[cursor_state.pos].classList != "style" + style_span_map.space)
                             screen.children[cursor_state.pos].classList = "style" + style_span_map.space;
                     }
-                    blinkstate = 51;
-                    BlinkStep();
+                    blinkstate = 50;
+                    newcursor=true;
                 }
             } else {
                 if (cursor_state.pos < scrmax) {
@@ -555,8 +564,8 @@ function WebTerm() {
                     last_cursor.x = 0;
                     ++last_cursor.y;
                 } ++cursor_state.pos;
-                blinkstate = 51;
-                BlinkStep();
+                blinkstate = 50;
+                newcursor = true;
             }
         }
         if (cursor_state.pos >= scrmax) {
@@ -570,6 +579,7 @@ function WebTerm() {
                 screen.appendChild(space_span);
             } while (++scrmax < cursor_state.pos);
         }
+        if (newcursor&&!keepcursor) UpdateCursor();
         //cursor_state.pos = 0;
         //console.log(scrtxt);
         //screen.innerHTML = scrtxt;
@@ -607,14 +617,8 @@ function WebTerm() {
 
     var oldcursor = { type: cursor_state.type, blink: cursor_state.blink, pos: -1 };
     var lastfocused = true;
-    function BlinkStep() {
-        if (blinkstate > 0) {
-            if (--blinkstate === 0)
-                blinkstate = -50;
-        } else if (++blinkstate === 0)
-                blinkstate = 50;
-
-        SendOutput("");
+    function UpdateCursor() {
+        SendOutput("",true);
         if (cursor_state.pos !== oldcursor.pos && oldcursor.pos !== -1) {
             if (oldcursor.pos < screen.childElementCount) {
                 if (screen.children[oldcursor.pos].style.top !== "") {
@@ -756,7 +760,14 @@ function WebTerm() {
     }
 
     setInterval(HandleCursor, 1, input);
-    setInterval(BlinkStep, 10);
+    setInterval(function() {
+        if (blinkstate > 0) {
+            if (--blinkstate === 0)
+                blinkstate = -50;
+        } else if (++blinkstate === 0)
+                blinkstate = 50;
+        UpdateCursor();
+    }, 10);
 
     function xx() {
         return (screen.parentElement.getBoundingClientRect().height-screen.children[0].getBoundingClientRect().top) /(screen.children[0].getBoundingClientRect().height + screen.children[10].getBoundingClientRect().top - screen.children[0].getBoundingClientRect().bottom)
@@ -951,8 +962,6 @@ function WebTerm() {
         
         lastmouse.x = mouse_column; lastmouse.y = mouse_row;
         GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
-
-        //MoveCursor(mouse_row, mouse_column);
     }
 
     function UpdateToggledKeys(e) {
@@ -1075,14 +1084,14 @@ function WebTerm() {
     function GotFocus() {
         input.focus();
         focused = true;
-        blinkstate = 51;
-        BlinkStep();
+        blinkstate = 50;
+        UpdateCursor();
         if (FocusChangeReporting) GotInput("\x1b[I");
     }
 
     function LostFocus() {
         focused = false;
-        BlinkStep();
+        UpdateCursor();
         if (FocusChangeReporting) GotInput("\x1b[O");
     }
 
