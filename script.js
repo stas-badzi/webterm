@@ -20,6 +20,7 @@ function WebTerm() {
 
     function GotInput(str) {
         if (termios.LocalFlags & ECHO) SendOutput(str);
+        if (imports.InputHandler === null) return;
         buffer = buffer.concat(str);
         let nextbuf = ""
         if (termios.LocalFlags & ICANON) {
@@ -33,7 +34,6 @@ function WebTerm() {
 
     input.value = "\x1b\x18"; // ESCAPE CANCEL
     WebTerm_HandleInput = function(e) {
-        if (imports.InputHandler == null) return;
         let str = input.value;
         if (str.length > 2) {
             for (let i = 0; i < str.length; i++) {
@@ -107,7 +107,7 @@ function WebTerm() {
     }
 
     function GetTermios() {return termios;}
-    function SetTermios(newtermios) {termios=newtermios;if (imports.InputHandler) GotInput("")}
+    function SetTermios(newtermios) {termios=newtermios;GotInput("")}
 
     function HandleCursor(elem) {
         elem.selectionStart = elem.selectionEnd = 1;
@@ -435,7 +435,7 @@ function WebTerm() {
                     } else if (full_action.turnon === 9) // ESC[#G
                         MoveCursor(last_cursor.y, full_action.actions[0].type - 1);
                     else if (full_action.turnon === 10) { // ESC[#n
-                        if (full_action.actions[0].type === 6) {if (imports.InputHandler) GotInput("\x1b[" + (last_cursor.y + 1) + ';' + (last_cursor.x+1) + 'R');}
+                        if (full_action.actions[0].type === 6) GotInput("\x1b[" + (last_cursor.y + 1) + ';' + (last_cursor.x+1) + 'R');
                     } else if (full_action.turnon === 11) { // ESC[#J
                         let str = "";
                         let oldpos = last_cursor;
@@ -779,7 +779,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler === null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -843,7 +843,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -887,7 +887,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
 
@@ -909,7 +909,7 @@ function WebTerm() {
             if (imports.KeyboardHandler) UpdateToggledKeys(e);
             e.preventDefault();
         }
-        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking) || imports.InputHandler == null) return;
+        if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -1105,6 +1105,7 @@ function WebTerm() {
     window.addEventListener("blur", LostFocus);
 
     imports = Main(SendOutput,GetScreenDimensions,GetTermios,SetTermios);
+    GotInput("");
 }
 
 document.addEventListener("DOMContentLoaded",WebTerm);
