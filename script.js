@@ -42,6 +42,7 @@ function WebTerm() {
                 //console.log(str[i]);
             }
             input.value = "\x1b\x18"; // ESC CAN
+            input.selectionStart = input.selectionEnd = 1;
         } else if (str.length === 1) {
             //log.textContent = text.substring(0, text.length - 1);
             if (str === "\x1b") {
@@ -56,8 +57,10 @@ function WebTerm() {
                 //console.log(str);
             }
             input.value = "\x1b\x18"; // ESC CAN
+            input.selectionStart = input.selectionEnd = 1;
         } else if (str.length === 0) {
             input.value = "\x1b\x18"; // ESC CAN
+            input.selectionStart = input.selectionEnd = 1;
         } else {
             //console.log(str);
         }
