@@ -403,7 +403,7 @@ function WebTerm() {
                                     case 1003:
                                         MouseTracking=full_action.turnon>0;
                                         break;
-                                    case 1016:
+                                    case 1006:
                                         ExtendedMouseTracking=full_action.turnon>0;
                                     case 1015:
                                         URXVTMouseTracking=full_action.turnon>0;
@@ -835,7 +835,8 @@ function WebTerm() {
         if (e.altKey || e.metaKey) operation |= (1<<3); // control
         if (e.ctrlKey) operation |= (1<<4); // alt
 
-        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+        let prefix = ExtendedMouseTracking?"\x1b[<":"\x1b[";
+        GotInput(prefix + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
     }
 
     function OnTapStart(e) {
@@ -862,6 +863,7 @@ function WebTerm() {
             e.preventDefault();
         }
         if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
+        let prefix = ExtendedMouseTracking?"\x1b[<":"\x1b[";
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -897,7 +899,7 @@ function WebTerm() {
         if (e.altKey || e.metaKey) operation |= (1<<3); // control
         if (e.ctrlKey) operation |= (1<<4); // alt
 
-        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm');
+        GotInput(prefix + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm');
     }
 
     function OnMouseWheel(e) {
@@ -906,6 +908,8 @@ function WebTerm() {
             e.preventDefault();
         }
         if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
+        let prefix = ExtendedMouseTracking?"\x1b[<":"\x1b[";
+        
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
 
@@ -915,10 +919,10 @@ function WebTerm() {
         if (e.webkitDirectionInvertedFromDevice) deltaX = -deltaX; // macOS safari `natural scrolling`
 
         if (deltaY != 0)
-            GotInput("\x1b[<" + ((1<<6) | ((deltaY < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + "M");
+            GotInput(prefix + ((1<<6) | ((deltaY < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + "M");
         if (deltaX != 0) {
-            GotInput("\x1b[<" + ((1<<6) | (1<<1) | ((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
-            GotInput("\x1b[<" + ((1<<6) | (1<<1) |((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm')
+            GotInput(prefix + ((1<<6) | (1<<1) | ((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+            GotInput(prefix + ((1<<6) | (1<<1) |((deltaX < 0) << 0)) + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'm')
         }
     }
 
@@ -928,6 +932,7 @@ function WebTerm() {
             e.preventDefault();
         }
         if (!MouseTracking || !(ExtendedMouseTracking||URXVTMouseTracking)) return;
+        let prefix = ExtendedMouseTracking?"\x1b[<":"\x1b[";
 
         mouse_row = Math.floor((e.clientY-(exess_height/2)) / symbol_height);
         mouse_column = Math.floor((e.clientX-(exess_width/2)) / symbol_width);
@@ -968,7 +973,7 @@ function WebTerm() {
         }
         
         lastmouse.x = mouse_column; lastmouse.y = mouse_row;
-        GotInput("\x1b[<" + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
+        GotInput(prefix + operation + ";" + (mouse_column + 1) + ';' + (mouse_row+1) + 'M');
     }
 
     function UpdateToggledKeys(e) {
