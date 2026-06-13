@@ -112,10 +112,6 @@ function WebTerm() {
     function GetTermios() {return termios;}
     function SetTermios(newtermios) {termios=newtermios;GotInput("")}
 
-    function HandleCursor(elem) {
-        elem.selectionStart = elem.selectionEnd = 1;
-    }
-
     window.onbeforeunload = function (e) {
         if (imports.ExitHandler) imports.ExitHandler();
         return undefined;
@@ -769,7 +765,10 @@ function WebTerm() {
         lastfocused = focused;
     }
 
-    input.addEventListener("selectionchange",HandleCursor,input);
+    function UpdateSelection(e) {
+        e.target.selectionStart = e.target.selectionEnd = 1;
+    }
+    input.addEventListener("selectionchange",UpdateSelection);
     setInterval(function() {
         if (blinkstate > 0) {
             if (--blinkstate === 0)
