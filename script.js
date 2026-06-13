@@ -769,7 +769,7 @@ function WebTerm() {
         lastfocused = focused;
     }
 
-    setInterval(HandleCursor, 1, input);
+    input.addEventListener("selectionchange",HandleCursor,input);
     setInterval(function() {
         if (blinkstate > 0) {
             if (--blinkstate === 0)
