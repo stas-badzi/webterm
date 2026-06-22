@@ -1004,7 +1004,10 @@ function WebTerm() {
     }
 
     function OnKeyPress(e) {
-        e.preventDefault();
+        if (e.code=="Tab") {
+            GotInput("\t");
+            e.preventDefault();
+        }
         if (imports.KeyboardHandler == null) return;
         UpdateToggledKeys(e);
 
