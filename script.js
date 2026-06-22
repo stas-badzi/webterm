@@ -1004,6 +1004,7 @@ function WebTerm() {
     }
 
     function OnKeyPress(e) {
+        e.preventDefault();
         if (imports.KeyboardHandler == null) return;
         UpdateToggledKeys(e);
 
