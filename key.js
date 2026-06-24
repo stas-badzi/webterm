@@ -131,7 +131,7 @@ const Key = {
     BAR: 124, /* | */
     BRACERIGHT: 125, /* } */
     ASCIITILDE: 126, /* ~ */
-    DEconstE: 127, /* ␡ */
+    DELETE: 127, /* ␡ */
     // generally from now on the values will differ in most charsets, the one's before only differ one's like cyrillic, greek, etc.
     EMPTY_1: 128, // in ISO-8859-* (latin-*) charsets chars 128-159 are invisable control chars, so they don't represent any key
     EMPTY_2: 129, // we include them here to so that they don't get tured into Key::Enum::HOLE when using Key::ToEnum('') with them
@@ -942,7 +942,7 @@ const KeyChart = {
     "ArrowDown": Key.ARROW_DOWN,
     "PageDown": Key.PGDN,
     "Insert": Key.INSERT,
-    "Deconste": Key.DEconstE,
+    "Delete": Key.DELETE,
     "VolumeMute": Key.VOLUME_MUTE, // Firefox + Chromium <52
     "VolumeDown": Key.VOLUME_DOWN, // Firefox + Chromium <52
     "VolumeUp": Key.VOLUME_UP, // Firefox + Chromium <52
